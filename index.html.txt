@@ -1,0 +1,910 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erdem Hospital — Executive Search Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#0B2A4A;
+    --navy-2:#123A63;
+    --navy-soft:#EAF0F6;
+    --teal:#0F9B8E;
+    --teal-dark:#0A7A70;
+    --teal-soft:#E1F5F2;
+    --coral:#E0524B;
+    --coral-soft:#FCE7E5;
+    --amber:#DE9A3C;
+    --paper:#F5F7FA;
+    --card:#FFFFFF;
+    --line:#E3E8EF;
+    --ink:#132436;
+    --muted:#6B7686;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 26px 90px;}
+
+  /* ---------- Header ---------- */
+  header.masthead{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%);
+    border-radius:16px;
+    padding:26px 32px;
+    margin-bottom:24px;
+    color:#fff;
+    flex-wrap:wrap;
+    gap:16px;
+    box-shadow:0 8px 24px rgba(11,42,74,0.18);
+  }
+  header.masthead .brand-eyebrow{
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:#6FE3D3;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  header.masthead h1{
+    margin:0;
+    font-size:27px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+  header.masthead .sub{
+    font-size:13px;
+    color:#B9CBDD;
+    margin-top:6px;
+  }
+  header.masthead .actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .btn-export{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:background .18s ease, transform .12s ease;
+  }
+  .btn-export:hover{ background:rgba(255,255,255,0.2); transform:translateY(-1px); }
+  .live-tag{
+    font-size:11px;
+    background:rgba(111,227,211,0.15);
+    color:#6FE3D3;
+    border:1px solid rgba(111,227,211,0.35);
+    padding:5px 11px;
+    border-radius:20px;
+    font-weight:700;
+    letter-spacing:.03em;
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabbar{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+    background:var(--card);
+    padding:6px;
+    border-radius:14px;
+    border:1px solid var(--line);
+  }
+  .tabbar button{
+    font-family:inherit;
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    padding:10px 20px;
+    font-size:13.5px;
+    font-weight:700;
+    border-radius:10px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .tabbar button:hover{ color:var(--navy); background:var(--navy-soft); }
+  .tabbar button.active{
+    background:var(--navy);
+    color:#fff;
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; animation:fade .3s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+    margin-bottom:22px;
+  }
+  @media (max-width:1100px){ .kpi-row{ grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .kpi-row{ grid-template-columns:1fr;} }
+
+  .kpi{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .kpi:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(11,42,74,0.08); }
+  .kpi::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:4px;
+    background:var(--teal);
+  }
+  .kpi.warn::before{ background:var(--coral); }
+  .kpi .label{
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .kpi .value{
+    font-size:26px;
+    font-weight:800;
+    color:var(--navy);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-0.01em;
+  }
+  .kpi .delta{
+    font-size:12.5px;
+    font-weight:700;
+    margin-top:6px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .kpi .delta.pos{ color:var(--teal-dark); background:var(--teal-soft); }
+  .kpi .delta.neg{ color:var(--coral); background:var(--coral-soft); }
+  .kpi .delta.neu{ color:var(--muted); background:var(--navy-soft); }
+  .kpi .sub{ font-size:11.5px; color:var(--muted); margin-top:6px; }
+
+  /* ---------- Cards / grid ---------- */
+  .grid-2{ display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
+  .grid-2b{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:960px){ .grid-2, .grid-2b{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:20px 22px;
+    margin-bottom:18px;
+    position:relative;
+    transition:box-shadow .18s ease;
+  }
+  .card:hover{ box-shadow:0 6px 20px rgba(11,42,74,0.06); }
+  .card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .card h3{
+    margin:0;
+    font-size:13px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--navy);
+    font-weight:800;
+  }
+  .card .card-note{ font-size:11.5px; color:var(--muted); margin-top:2px;}
+
+  .icon-btn{
+    background:var(--navy-soft);
+    border:1px solid var(--line);
+    color:var(--navy-2);
+    width:30px; height:30px;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+    transition:background .15s ease, transform .12s ease;
+  }
+  .icon-btn:hover{ background:var(--teal-soft); color:var(--teal-dark); transform:translateY(-1px); }
+
+  .chart-box{ position:relative; height:300px; }
+  .chart-box.tall{ height:340px; }
+  .chart-box.short{ height:230px; }
+
+  /* ---------- Table ---------- */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-variant-numeric:tabular-nums;
+    font-size:13.5px;
+  }
+  th,td{ text-align:center; padding:9px 6px; border-bottom:1px solid var(--line); }
+  th{ font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  td:first-child, th:first-child{ text-align:left; font-weight:700; color:var(--navy); }
+  td.pos{ color:var(--teal-dark); font-weight:700; }
+  td.neg{ color:var(--coral); font-weight:700; }
+  td.na{ color:var(--muted); }
+  tr.rank-row td{ font-weight:700; }
+  .medal{ display:inline-block; width:20px; }
+
+  /* ---------- Heatmap ---------- */
+  .heatmap{ display:grid; overflow-x:auto; }
+  .heatmap-grid{ display:grid; gap:3px; min-width:600px; }
+  .hm-cell{
+    border-radius:6px;
+    padding:8px 4px;
+    text-align:center;
+    font-size:11.5px;
+    font-weight:700;
+    color:#fff;
+    cursor:default;
+    transition:transform .12s ease;
+  }
+  .hm-cell:hover{ transform:scale(1.06); outline:2px solid var(--navy); z-index:2; }
+  .hm-label{
+    font-size:10.5px;
+    color:var(--muted);
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    padding:8px 6px;
+  }
+  .hm-header{
+    font-size:10px;
+    color:var(--muted);
+    text-align:center;
+    font-weight:700;
+    text-transform:uppercase;
+    padding-bottom:4px;
+  }
+
+  /* ---------- Insights ---------- */
+  .insights-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .insights-list li{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    font-size:13.5px;
+    background:var(--navy-soft);
+    padding:12px 14px;
+    border-radius:10px;
+    border-left:3px solid var(--teal);
+  }
+  .insights-list li.flag{ border-left-color:var(--coral); background:var(--coral-soft); }
+  .insights-list .tag{
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    background:var(--teal); color:#fff; padding:3px 8px; border-radius:6px; white-space:nowrap;
+  }
+  .insights-list li.flag .tag{ background:var(--coral); }
+
+  .analysis{
+    font-size:14px;
+    color:var(--ink);
+    background:var(--teal-soft);
+    border-left:4px solid var(--teal);
+    padding:14px 18px;
+    border-radius:8px;
+  }
+
+  .legend-swatch{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); margin-right:14px; }
+  .legend-swatch .dot{ width:10px; height:10px; border-radius:3px; }
+
+  footer{ margin-top:30px; font-size:11.5px; color:var(--muted); text-align:center; }
+
+  ::-webkit-scrollbar{ height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:8px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="dashboard-root">
+
+  <header class="masthead">
+    <div>
+      <div class="brand-eyebrow">Marka Arama İstihbaratı · Tek Keyword Analizi</div>
+      <h1>Erdem Hospital — Executive Dashboard</h1>
+      <div class="sub">6 Pazar · Temmuz 2024 – Haziran 2026 · 8 Çeyrek · Aylık arama hacmi verisine dayalıdır</div>
+    </div>
+    <div class="actions">
+      <span class="live-tag">● Veri Eksiksiz</span>
+      <button class="btn-export" id="export-all">⬇ Dashboard'u PNG Olarak Dışa Aktar</button>
+    </div>
+  </header>
+
+  <div class="tabbar" id="tabbar"></div>
+  <div id="panels"></div>
+
+  <footer>Yalnızca "erdem hospital" keywordü analiz edilmiştir · Kaynak: aylık arama hacmi raporu (Jul 2024–Jun 2026) · Tüm pazarlarda eksik ay tespit edilmemiştir.</footer>
+</div>
+
+<script>
+/* ============================= DATA ============================= */
+const QLABELS = ["Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26","Q2'26"];
+const TLABELS = ["Q3→Q4'24","Q4→Q1'25","Q1→Q2'25","Q2→Q3'25","Q3→Q4'25","Q4→Q1'26","Q1→Q2'26"];
+const YOY_LABELS = ["Q3 YoY","Q4 YoY","Q1 YoY","Q2 YoY"];
+
+const COUNTRY_DATA = {
+  "Birleşik Krallık": { q:[1260,1030,1900,2190,2160,1390,1440,1260],
+    qoq:[-18.3,84.5,15.3,-1.4,-35.6,3.6,-12.5], yoy:[71.4,35.0,-24.2,-42.5],
+    analysis:"En büyük artış Q4'24→Q1'25 döneminde yaşanmıştır (+%84,5); bu sıçramanın ardından hacim Q2'25'te 2.190 ile iki yıllık zirvesine ulaşmıştır. En sert düşüş Q3'25→Q4'25 arasında görülmüştür (-%35,6). Yıl bazında ise Q1 ve Q2 2026'da negatif YoY (-%24,2 / -%42,5) dikkat çekmektedir; iki yıllık dönemin başı ve sonu aynı seviyede (1.260) olduğundan net bir yön yoktur." },
+  "Almanya": { q:[370,390,730,590,570,610,790,520],
+    qoq:[5.4,87.2,-19.2,-3.4,7.0,29.5,-34.2], yoy:[54.1,56.4,8.2,-11.9],
+    analysis:"En büyük artış Q4'24→Q1'25 döneminde yaşanmıştır (+%87,2); her iki yılda da Ocak-Mart döneminde belirgin sezonsal sıçrama görülmektedir. En sert düşüş Q1'26→Q2'26 arasında gerçekleşmiştir (-%34,2). Genel trend yukarı yönlüdür (+%40,5, 2 yıl), ancak YoY büyüme 2026'da belirgin şekilde yavaşlamaktadır (Q1 YoY +%8,2, Q2 YoY -%11,9)." },
+  "İspanya": { q:[480,490,780,790,780,1010,1520,1060], qoq:[2.1,59.2,1.3,-1.3,29.5,50.5,-30.3], yoy:[62.5,106.1,94.9,34.2],
+    analysis:"En büyük artış Q4'25→Q1'26 döneminde gerçekleşmiştir (+%50,5) ve hacim bu çeyrekte 1.520 ile zirveye ulaşmıştır. En belirgin düşüş Q1'26→Q2'26 arasında görülmüştür (-%30,3). Genel trend güçlü şekilde yükseliş yönündedir (+%120,8, 2 yıl) ve tüm YoY karşılaştırmaları pozitif — İspanya en istikrarlı büyüyen pazardır." },
+  "Romanya": { q:[540,640,1260,1750,1590,1520,1660,1360], qoq:[18.5,96.9,38.9,-9.1,-4.4,9.2,-18.1], yoy:[194.4,137.5,31.7,-22.3],
+    analysis:"En büyük artış Q4'24→Q1'25 arasında yaşanmış, hacim neredeyse iki katına çıkmıştır (+%96,9). En sert düşüş Q1'26→Q2'26 döneminde görülmüştür (-%18,1). Genel trend belirgin şekilde yükseliş yönündedir (+%151,9, 2 yıl); ancak Q3 ve Q4 YoY büyümesindeki keskin yavaşlama (+%194,4 → +%31,7) ve Q2'26'daki negatif YoY (-%22,3) izlenmesi gereken bir sinyaldir." },
+  "Fransa": { q:[550,680,600,300,250,440,360,230], qoq:[23.6,-11.8,-50.0,-16.7,76.0,-18.2,-36.1], yoy:[-54.5,-35.3,-40.0,-23.3],
+    analysis:"En büyük artış Q3'25→Q4'25 arasında gerçekleşmiştir (+%76,0), fakat düşük mutlak hacimler üzerinden oluşmuştur. En dikkat çekici düşüş Q1'25→Q2'25 arasında yaşanmıştır (-%50,0). Fransa, tüm YoY dönemlerinde negatif büyüme gösteren tek pazardır ve genel trend net biçimde düşüş yönündedir (-%58,2, 2 yıl)." },
+  "İtalya": { q:[330,450,690,520,910,1240,2410,850], qoq:[36.4,53.3,-24.6,75.0,36.3,94.4,-64.7], yoy:[175.8,175.6,249.3,63.5],
+    analysis:"En büyük artış Q4'25→Q1'26 arasında yaşanmış, hacim neredeyse ikiye katlanarak 2.410 ile zirveye ulaşmıştır (+%94,4). Hemen ardından Q1'26→Q2'26 döneminde tüm pazarlar arasındaki en sert düşüş kaydedilmiştir (-%64,7). Genel trend güçlü yükseliş yönünde olsa da (+%157,6, 2 yıl) İtalya en yüksek oynaklığa sahip pazardır; bu iki uç çeyrek anormal değer olarak değerlendirilebilir." }
+};
+const COUNTRIES = Object.keys(COUNTRY_DATA);
+const COUNTRY_COLORS = {
+  "Birleşik Krallık":"#0F9B8E", "Almanya":"#123A63", "İspanya":"#DE9A3C",
+  "Romanya":"#7B5EA7", "Fransa":"#E0524B", "İtalya":"#2E86C1"
+};
+
+// global totals
+const GLOBAL_Q = QLABELS.map((_,i)=> COUNTRIES.reduce((s,c)=> s+COUNTRY_DATA[c].q[i],0));
+const GLOBAL_QOQ = [];
+for(let i=1;i<GLOBAL_Q.length;i++){ GLOBAL_QOQ.push(+(((GLOBAL_Q[i]-GLOBAL_Q[i-1])/GLOBAL_Q[i-1])*100).toFixed(1)); }
+const GLOBAL_YOY_PAIRS = [[0,4],[1,5],[2,6],[3,7]];
+const GLOBAL_YOY = GLOBAL_YOY_PAIRS.map(([a,b])=> +(((GLOBAL_Q[b]-GLOBAL_Q[a])/GLOBAL_Q[a])*100).toFixed(1));
+
+const chartInstances = {};
+
+/* ============================= HELPERS ============================= */
+function fmtNum(v){ return Math.round(v).toLocaleString('tr-TR'); }
+function fmtPct(v, withSign=true){
+  if(v===null||v===undefined) return {txt:"N/A", cls:"neu"};
+  const cls = v>0.05 ? "pos" : (v<-0.05 ? "neg" : "neu");
+  const sign = v>0 ? "+" : "";
+  return {txt:(withSign?sign:"")+v.toFixed(1)+"%", cls};
+}
+function arrowFor(v){ return v>0.05 ? "▲" : (v<-0.05 ? "▼" : "▬"); }
+function animateValue(el, end, suffix=""){
+  const dur=900, start=performance.now(), from=0;
+  function step(now){
+    const p=Math.min(1,(now-start)/dur);
+    const eased = 1-Math.pow(1-p,3);
+    el.textContent = fmtNum(from+(end-from)*eased)+suffix;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function downloadChart(chart, name){
+  const a=document.createElement('a');
+  a.href=chart.toBase64Image('image/png',1);
+  a.download=name+'.png';
+  a.click();
+}
+function heatColor(val, min, max, negOk){
+  // teal scale for positive-only, diverging red-teal if negOk
+  if(negOk){
+    const m = Math.max(Math.abs(min),Math.abs(max),1);
+    const t = val/m; // -1..1
+    if(t>=0){
+      const l = 92 - t*45; // lighter->darker teal
+      return `hsl(174, 55%, ${Math.max(30,l)}%)`;
+    }else{
+      const l = 92 - Math.abs(t)*40;
+      return `hsl(4, 65%, ${Math.max(45,l)}%)`;
+    }
+  }else{
+    const t = max===min ? 0.5 : (val-min)/(max-min);
+    const l = 88 - t*55;
+    return `hsl(198, 55%, ${Math.max(22,l)}%)`;
+  }
+}
+
+/* ============================= BUILD TABS ============================= */
+const tabbar = document.getElementById('tabbar');
+const panels = document.getElementById('panels');
+
+const tabDefs = [{id:'overview', label:'📊 Genel Bakış'}].concat(
+  COUNTRIES.map(c=>({id:c, label:c}))
+);
+
+tabDefs.forEach((t,i)=>{
+  const btn=document.createElement('button');
+  btn.textContent=t.label;
+  btn.className = i===0?'active':'';
+  btn.onclick=()=>selectTab(t.id);
+  btn.id='tab-'+t.id;
+  tabbar.appendChild(btn);
+});
+
+function selectTab(id){
+  tabDefs.forEach(t=>{
+    document.getElementById('tab-'+t.id).classList.toggle('active', t.id===id);
+    document.getElementById('panel-'+t.id).classList.toggle('active', t.id===id);
+  });
+}
+
+/* ============================= OVERVIEW PANEL ============================= */
+const overviewPanel = document.createElement('div');
+overviewPanel.className='panel active';
+overviewPanel.id='panel-overview';
+
+const latestIdx = GLOBAL_Q.length-1;
+const totalLatest = GLOBAL_Q[latestIdx];
+const qoqLatest = GLOBAL_QOQ[GLOBAL_QOQ.length-1];
+const yoyLatest = GLOBAL_YOY[GLOBAL_YOY.length-1];
+const twoYearGrowth = +(((GLOBAL_Q[7]-GLOBAL_Q[0])/GLOBAL_Q[0])*100).toFixed(1);
+const peakIdx = GLOBAL_Q.indexOf(Math.max(...GLOBAL_Q));
+const totalsByCountry = COUNTRIES.map(c=>({c, total: COUNTRY_DATA[c].q.reduce((a,b)=>a+b,0)})).sort((a,b)=>b.total-a.total);
+const growth2y = COUNTRIES.map(c=>{
+  const v=COUNTRY_DATA[c].q; return {c, g:+(((v[7]-v[0])/v[0])*100).toFixed(1)};
+}).sort((a,b)=>b.g-a.g);
+const topGrowth = growth2y[0];
+const worstGrowth = growth2y[growth2y.length-1];
+
+function kpiCard(label, value, deltaObj, sub, warnIfNeg){
+  const f = deltaObj;
+  const cls = f.cls;
+  return `<div class="kpi ${warnIfNeg && cls==='neg' ? 'warn':''}">
+    <div class="label">${label}</div>
+    <div class="value" data-count="${value}">0</div>
+    <span class="delta ${cls}">${arrowFor(parseFloat(f.txt))} ${f.txt}</span>
+    <div class="sub">${sub}</div>
+  </div>`;
+}
+
+overviewPanel.innerHTML = `
+  <div class="kpi-row" id="kpi-row-overview">
+    <div class="kpi">
+      <div class="label">Toplam Arama Hacmi (Q2'26)</div>
+      <div class="value" data-count="${totalLatest}">0</div>
+      <span class="delta ${fmtPct(qoqLatest).cls}">${arrowFor(qoqLatest)} ${fmtPct(qoqLatest).txt} QoQ</span>
+      <div class="sub">6 pazar toplamı, son çeyrek</div>
+    </div>
+    <div class="kpi ${yoyLatest<0?'warn':''}">
+      <div class="label">Yıllık Değişim (YoY)</div>
+      <div class="value" data-count="${yoyLatest}" data-suffix="%">0%</div>
+      <span class="delta ${fmtPct(yoyLatest).cls}">${arrowFor(yoyLatest)} Q2'25 → Q2'26</span>
+      <div class="sub">Aynı çeyreğin yıllık karşılaştırması</div>
+    </div>
+    <div class="kpi">
+      <div class="label">2 Yıllık Büyüme</div>
+      <div class="value" data-count="${twoYearGrowth}" data-suffix="%">0%</div>
+      <span class="delta ${fmtPct(twoYearGrowth).cls}">${arrowFor(twoYearGrowth)} Q3'24 → Q2'26</span>
+      <div class="sub">Dönem başı - dönem sonu karşılaştırması</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Zirve Çeyrek</div>
+      <div class="value">${QLABELS[peakIdx]}</div>
+      <span class="delta neu">${fmtNum(GLOBAL_Q[peakIdx])} arama</span>
+      <div class="sub">6 pazar toplamında en yüksek hacim</div>
+    </div>
+    <div class="kpi">
+      <div class="label">En Güçlü Büyüyen Pazar</div>
+      <div class="value" style="font-size:20px;">${topGrowth.c}</div>
+      <span class="delta pos">▲ +${topGrowth.g.toFixed(1)}%</span>
+      <div class="sub">2 yıllık büyüme oranı</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Pazar Karşılaştırması — Çeyreklik Trend</h3><div class="card-note">Tüm pazarlar, iki yıllık arama hacmi seyri</div></div>
+        <button class="icon-btn" data-export="cmp-trend" title="PNG olarak indir">⬇</button>
+      </div>
+      <div class="chart-box tall"><canvas id="cmp-trend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Pazar Sıralaması</h3><div class="card-note">2 yıllık toplam arama hacmi</div></div>
+        <button class="icon-btn" data-export="cmp-rank" title="PNG olarak indir">⬇</button>
+      </div>
+      <div class="chart-box tall"><canvas id="cmp-rank"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2b">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>YoY Büyüme Karşılaştırması</h3><div class="card-note">Aynı çeyreğin yıllık değişimi, pazar bazında</div></div>
+        <button class="icon-btn" data-export="cmp-yoy" title="PNG olarak indir">⬇</button>
+      </div>
+      <div class="chart-box"><canvas id="cmp-yoy"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Genel Sıralama Tablosu</h3><div class="card-note">Son çeyrek hacmi ve 2 yıllık büyüme</div></div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Pazar</th><th>Q2'26 Hacim</th><th>2Y Büyüme</th></tr></thead>
+        <tbody>
+          ${totalsByCountry.map((row,i)=>{
+            const latest = COUNTRY_DATA[row.c].q[7];
+            const g = growth2y.find(x=>x.c===row.c).g;
+            const gf = fmtPct(g);
+            const medals=['🥇','🥈','🥉'];
+            return `<tr class="rank-row"><td>${medals[i]||(i+1)}</td><td>${row.c}</td><td>${fmtNum(latest)}</td><td class="${gf.cls}">${gf.txt}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><h3>Arama Hacmi Isı Haritası</h3><div class="card-note">Her pazarın kendi içindeki çeyreklik yoğunluğu (satır bazlı normalize)</div></div>
+    </div>
+    <div class="heatmap" id="heatmap-volume"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><h3>Çeyreklik % Değişim Isı Haritası</h3><div class="card-note">Yeşil = büyüme, kırmızı = daralma</div></div>
+    </div>
+    <div class="heatmap" id="heatmap-qoq"></div>
+    <div style="margin-top:10px;">
+      <span class="legend-swatch"><span class="dot" style="background:hsl(4,65%,55%);"></span>Düşüş</span>
+      <span class="legend-swatch"><span class="dot" style="background:hsl(174,10%,85%);"></span>Değişim yok</span>
+      <span class="legend-swatch"><span class="dot" style="background:hsl(174,55%,40%);"></span>Büyüme</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h3>Yönetici Özeti — Öne Çıkan Bulgular</h3></div></div>
+    <ul class="insights-list" id="exec-insights"></ul>
+  </div>
+`;
+panels.appendChild(overviewPanel);
+
+/* Executive insights (rule-based) */
+const insights = [
+  {tag:"Büyüme", text:`İtalya, +%${growth2y.find(x=>x.c==='İtalya').g.toFixed(1)} ile 2 yıllık dönemde en hızlı büyüyen pazar oldu; ancak Q1'26→Q2'26 arasında -%64,7 ile en sert tekil düşüşü de yine İtalya yaşadı.`, flag:false},
+  {tag:"Risk", text:`Fransa, tüm YoY karşılaştırmalarında negatif büyüme gösteren tek pazar (2 yıllık toplamda -%58,2); marka görünürlüğü açısından öncelikli inceleme gerektiriyor.`, flag:true},
+  {tag:"Sezonsallık", text:`Almanya ve İspanya'da iki yıl üst üste Ocak–Mart (Q1) döneminde belirgin bir arama hacmi sıçraması görülüyor — sezonsal bir kampanya fırsatı olabilir.`, flag:false},
+  {tag:"Liderlik", text:`Birleşik Krallık, 2 yıllık toplam hacimde ilk sırada (${fmtNum(totalsByCountry[0].total)} arama) yer alsa da son çeyrekte Romanya'nın gerisinde kaldı; kısa vadeli momentum Romanya lehine.`, flag:false},
+  {tag:"Uyarı", text:`Global toplamda Q1'26→Q2'26 arasında -%35,5 düşüş kaydedildi; bu düşüş İspanya hariç tüm pazarlarda eş zamanlı gerçekleşti — mevsimsellik veya kampanya bitişiyle ilişkili olabilir.`, flag:true},
+];
+document.getElementById('exec-insights').innerHTML = insights.map(i=>`
+  <li class="${i.flag?'flag':''}"><span class="tag">${i.tag}</span><span>${i.text}</span></li>
+`).join('');
+
+/* ============================= COUNTRY PANELS ============================= */
+COUNTRIES.forEach(c=>{
+  const d = COUNTRY_DATA[c];
+  const panel = document.createElement('div');
+  panel.className='panel';
+  panel.id='panel-'+c;
+
+  const latest = d.q[7];
+  const qoqLast = d.qoq[d.qoq.length-1];
+  const yoyLast = d.yoy[d.yoy.length-1];
+  const g2y = +(((d.q[7]-d.q[0])/d.q[0])*100).toFixed(1);
+  const rank = totalsByCountry.findIndex(x=>x.c===c)+1;
+
+  let volRow = '<tr><td>Search Volume</td>' + d.q.map(v=>`<td>${fmtNum(v)}</td>`).join('') + '</tr>';
+  let qoqRow = '<tr><td>QoQ Değişim</td><td class="na">—</td>' + d.qoq.map(v=>{const f=fmtPct(v); return `<td class="${f.cls}">${f.txt}</td>`;}).join('') + '</tr>';
+
+  panel.innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="label">Son Çeyrek Hacmi (Q2'26)</div>
+        <div class="value" data-count="${latest}">0</div>
+        <span class="delta ${fmtPct(qoqLast).cls}">${arrowFor(qoqLast)} ${fmtPct(qoqLast).txt} QoQ</span>
+        <div class="sub">Bir önceki çeyreğe göre</div>
+      </div>
+      <div class="kpi ${yoyLast<0?'warn':''}">
+        <div class="label">Yıllık Değişim (YoY)</div>
+        <div class="value" data-count="${yoyLast}" data-suffix="%">0%</div>
+        <span class="delta ${fmtPct(yoyLast).cls}">${arrowFor(yoyLast)} Q2'25 → Q2'26</span>
+        <div class="sub">Aynı çeyreğin yıllık karşılaştırması</div>
+      </div>
+      <div class="kpi">
+        <div class="label">2 Yıllık Büyüme</div>
+        <div class="value" data-count="${g2y}" data-suffix="%">0%</div>
+        <span class="delta ${fmtPct(g2y).cls}">${arrowFor(g2y)} Q3'24 → Q2'26</span>
+        <div class="sub">Dönem başı - dönem sonu</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Pazar Sıralaması</div>
+        <div class="value">#${rank} / ${COUNTRIES.length}</div>
+        <span class="delta neu">2 yıllık toplam hacme göre</span>
+        <div class="sub">6 pazar arasında</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Çeyreklik Arama Hacmi Trendi</h3><div class="card-note">QoQ % değişim etiketleriyle birlikte</div></div>
+          <button class="icon-btn" data-export="vol-${c}" title="PNG olarak indir">⬇</button>
+        </div>
+        <div class="chart-box tall"><canvas id="vol-${c}"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Çeyrekler Arası % Değişim</h3></div>
+          <button class="icon-btn" data-export="chg-${c}" title="PNG olarak indir">⬇</button>
+        </div>
+        <div class="chart-box tall"><canvas id="chg-${c}"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Yıllık Karşılaştırma (YoY)</h3><div class="card-note">Aynı çeyreğin bir önceki yılla karşılaştırması</div></div>
+          <button class="icon-btn" data-export="yoy-${c}" title="PNG olarak indir">⬇</button>
+        </div>
+        <div class="chart-box"><canvas id="yoy-${c}"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Özet Tablo</h3>
+        <table>
+          <thead><tr><th>Metrik</th>${QLABELS.map(l=>`<th>${l}</th>`).join('')}</tr></thead>
+          <tbody>${volRow}${qoqRow}</tbody>
+        </table>
+        <div class="card-note" style="margin-top:8px;">Q3'24 için önceki çeyrek verisi bulunmadığından QoQ "—" olarak gösterilmiştir.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Analiz</h3>
+      <div class="analysis">${d.analysis}</div>
+    </div>
+  `;
+  panels.appendChild(panel);
+});
+
+/* ============================= COUNT-UP KPI ANIMATION ============================= */
+function animateAllKPIs(container){
+  container.querySelectorAll('.value[data-count]').forEach(el=>{
+    const val = parseFloat(el.getAttribute('data-count'));
+    const suffix = el.getAttribute('data-suffix')||'';
+    const start=performance.now(), dur=900;
+    function step(now){
+      const p=Math.min(1,(now-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      const cur = val*eased;
+      el.textContent = (suffix==='%' ? (cur>=0?'':'') + cur.toFixed(1) : fmtNum(cur)) + suffix;
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+animateAllKPIs(document.getElementById('panel-overview'));
+COUNTRIES.forEach(c=> animateAllKPIs(document.getElementById('panel-'+c)));
+
+/* re-trigger animation on tab switch */
+const origSelectTab = selectTab;
+selectTab = function(id){
+  origSelectTab(id);
+  const p = document.getElementById('panel-'+id);
+  if(p) animateAllKPIs(p);
+};
+tabDefs.forEach(t=>{ document.getElementById('tab-'+t.id).onclick=()=>selectTab(t.id); });
+
+/* ============================= CHART.JS GLOBAL DEFAULTS ============================= */
+Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+Chart.defaults.color = '#6B7686';
+Chart.defaults.animation = { duration: 700, easing: 'easeOutQuart' };
+
+/* ---- Comparison trend (overview) ---- */
+chartInstances['cmp-trend'] = new Chart(document.getElementById('cmp-trend').getContext('2d'), {
+  type:'line',
+  data:{
+    labels:QLABELS,
+    datasets: COUNTRIES.map(c=>({
+      label:c,
+      data:COUNTRY_DATA[c].q,
+      borderColor:COUNTRY_COLORS[c],
+      backgroundColor:COUNTRY_COLORS[c]+'20',
+      borderWidth:2.2,
+      pointRadius:3,
+      pointHoverRadius:6,
+      tension:0.3
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, padding:14, font:{size:11} } },
+      tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8, titleFont:{weight:'700'} }
+    },
+    scales:{ y:{ beginAtZero:true, grid:{color:'#EEF1F5'} }, x:{ grid:{display:false} } }
+  }
+});
+
+/* ---- Ranking bar (overview) ---- */
+chartInstances['cmp-rank'] = new Chart(document.getElementById('cmp-rank').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels: totalsByCountry.map(r=>r.c),
+    datasets:[{
+      label:'2 Yıllık Toplam Hacim',
+      data: totalsByCountry.map(r=>r.total),
+      backgroundColor: totalsByCountry.map(r=>COUNTRY_COLORS[r.c]),
+      borderRadius:8,
+      maxBarThickness:34
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8,
+      callbacks:{ label: ctx => fmtNum(ctx.raw) + ' arama' } } },
+    scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F5'} }, y:{ grid:{display:false} } }
+  }
+});
+
+/* ---- YoY comparison grouped bar (overview) ---- */
+chartInstances['cmp-yoy'] = new Chart(document.getElementById('cmp-yoy').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels:YOY_LABELS,
+    datasets: COUNTRIES.map(c=>({
+      label:c,
+      data:COUNTRY_DATA[c].yoy,
+      backgroundColor:COUNTRY_COLORS[c],
+      borderRadius:5,
+      maxBarThickness:18
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, padding:12, font:{size:10.5} } },
+      tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8,
+        callbacks:{ label: ctx => ctx.dataset.label + ': ' + (ctx.raw>0?'+':'') + ctx.raw.toFixed(1) + '%' } }
+    },
+    scales:{ y:{ grid:{color:'#EEF1F5'}, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } }
+  }
+});
+
+/* ---- Heatmaps (overview) ---- */
+function buildHeatmap(containerId, matrix, rows, cols, negOk, valueFmt){
+  const el = document.getElementById(containerId);
+  const grid = document.createElement('div');
+  grid.className='heatmap-grid';
+  grid.style.gridTemplateColumns = `140px repeat(${cols.length}, 1fr)`;
+  // header row
+  grid.appendChild(Object.assign(document.createElement('div'), {className:'hm-header', textContent:''}));
+  cols.forEach(cl=>{
+    const h=document.createElement('div'); h.className='hm-header'; h.textContent=cl;
+    grid.appendChild(h);
+  });
+  rows.forEach((r,ri)=>{
+    const rowVals = matrix[ri];
+    const min = Math.min(...rowVals), max = Math.max(...rowVals);
+    const lbl = document.createElement('div'); lbl.className='hm-label'; lbl.textContent=r;
+    grid.appendChild(lbl);
+    rowVals.forEach(v=>{
+      const cell = document.createElement('div');
+      cell.className='hm-cell';
+      cell.style.background = heatColor(v, min, max, negOk);
+      cell.textContent = valueFmt(v);
+      cell.title = `${r}: ${valueFmt(v)}`;
+      grid.appendChild(cell);
+    });
+  });
+  el.appendChild(grid);
+}
+buildHeatmap('heatmap-volume',
+  COUNTRIES.map(c=>COUNTRY_DATA[c].q), COUNTRIES, QLABELS, false, v=>fmtNum(v));
+buildHeatmap('heatmap-qoq',
+  COUNTRIES.map(c=>COUNTRY_DATA[c].qoq), COUNTRIES, TLABELS, true, v=>(v>0?'+':'')+v.toFixed(1)+'%');
+
+/* ---- Per-country charts ---- */
+COUNTRIES.forEach(c=>{
+  const d = COUNTRY_DATA[c];
+  const color = COUNTRY_COLORS[c];
+
+  chartInstances['vol-'+c] = new Chart(document.getElementById('vol-'+c).getContext('2d'), {
+    type:'line',
+    data:{ labels:QLABELS, datasets:[{
+      label:'Search Volume', data:d.q,
+      borderColor:color, backgroundColor:color+'22',
+      borderWidth:2.5, pointBackgroundColor:color, pointRadius:4, pointHoverRadius:7,
+      fill:true, tension:0.28
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8,
+          callbacks:{ afterLabel:(ctx)=>{ const i=ctx.dataIndex; if(i===0) return ''; const p=d.qoq[i-1]; return 'QoQ: '+(p>0?'+':'')+p.toFixed(1)+'%'; } } }
+      },
+      scales:{ y:{ beginAtZero:true, grid:{color:'#EEF1F5'} }, x:{ grid:{display:false} } }
+    },
+    plugins:[{
+      id:'pctLabels-'+c,
+      afterDatasetsDraw(chart){
+        const {ctx, data, scales:{x,y}} = chart;
+        ctx.save(); ctx.font='700 11px -apple-system,Segoe UI,sans-serif'; ctx.textAlign='center';
+        data.datasets[0].data.forEach((val, idx)=>{
+          if(idx===0) return;
+          const p = d.qoq[idx-1];
+          const label=(p>0?'+':'')+p.toFixed(1)+'%';
+          ctx.fillStyle = p>0?'#0A7A70':(p<0?'#E0524B':'#6B7686');
+          ctx.fillText(label, x.getPixelForValue(idx), y.getPixelForValue(val)-12);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+
+  chartInstances['chg-'+c] = new Chart(document.getElementById('chg-'+c).getContext('2d'), {
+    type:'bar',
+    data:{ labels:TLABELS, datasets:[{
+      label:'QoQ % Değişim', data:d.qoq,
+      backgroundColor: d.qoq.map(v=> v>=0?'#0F9B8E':'#E0524B'),
+      borderRadius:6, maxBarThickness:36
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8,
+        callbacks:{ label: ctx => (ctx.raw>0?'+':'')+ctx.raw.toFixed(1)+'%' } } },
+      scales:{ y:{ grid:{color:'#EEF1F5'}, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false}, ticks:{font:{size:10}} } }
+    }
+  });
+
+  chartInstances['yoy-'+c] = new Chart(document.getElementById('yoy-'+c).getContext('2d'), {
+    type:'bar',
+    data:{ labels:YOY_LABELS, datasets:[{
+      label:'YoY % Değişim', data:d.yoy,
+      backgroundColor: d.yoy.map(v=> v>=0?'#0F9B8E':'#E0524B'),
+      borderRadius:6, maxBarThickness:40
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0B2A4A', padding:10, cornerRadius:8,
+        callbacks:{ label: ctx => (ctx.raw>0?'+':'')+ctx.raw.toFixed(1)+'%' } } },
+      scales:{ y:{ grid:{color:'#EEF1F5'}, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } }
+    }
+  });
+});
+
+/* ============================= EXPORT HANDLERS ============================= */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-export]');
+  if(btn){
+    const key = btn.getAttribute('data-export');
+    if(chartInstances[key]) downloadChart(chartInstances[key], 'erdem_hospital_'+key);
+  }
+});
+
+document.getElementById('export-all').addEventListener('click', ()=>{
+  const root = document.getElementById('dashboard-root');
+  html2canvas(root, {backgroundColor:'#F5F7FA', scale:2}).then(canvas=>{
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download='Erdem_Hospital_Executive_Dashboard.png';
+    a.click();
+  });
+});
+</script>
+</body>
+</html>
